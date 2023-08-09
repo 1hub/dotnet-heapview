@@ -20,7 +20,7 @@ jobs:
     - name: Build
       run: dotnet build -c Release
     - name: Pack      
-      run: dotnet pack
+      run: dotnet pack -c Release
     - name: Publish the package to nuget.org
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       run: dotnet nuget push nupkg/*.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
