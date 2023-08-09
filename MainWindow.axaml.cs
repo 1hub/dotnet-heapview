@@ -11,11 +11,11 @@ public partial class MainWindow : Window
 {
     HeapSnapshot heapSnapshot;
 
-    public MainWindow()
+    public MainWindow(string fileName)
     {
         InitializeComponent();
 
-        var heapDump = new GCHeapDump("C:\\Users\\filip_pq4cffv\\Documents\\heap-heap-hurray\\Test\\input.gcdump"); // "C:\\Users\\filip_pq4cffv\\Downloads\\my-dev-port-1688140697.gcdump");
+        var heapDump = new GCHeapDump(fileName);
         heapSnapshot = new HeapSnapshot(heapDump);
 
         heapNodes = new();
