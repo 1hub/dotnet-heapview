@@ -6,8 +6,12 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OneHub.Tools.HeapView.MainWindow"
         Title="Heap View">
-	<UniformGrid Columns="1" Rows="2">
+	<Grid RowDefinitions="*, Auto, *">
 		<TreeDataGrid Name="heapTree" Grid.Row="0" />
-		<TreeDataGrid Name="retainersTree" Grid.Row="1" />
-	</UniformGrid>
+		<GridSplitter Grid.Row="1" Background="Gray" ResizeDirection="Rows" />
+		<StackPanel Grid.Row="2">
+			<TextBlock Text="Retainers:" Margin="4,8,8,8" />
+			<TreeDataGrid Name="retainersTree" />
+		</StackPanel>
+	</Grid>
 </Window>
