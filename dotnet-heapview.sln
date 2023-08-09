@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.33906.173
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dotnet-heapview", "dotnet-heapview.csproj", "{E0E87AFE-1E1A-489B-AE14-246CF6811563}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E0E87AFE-1E1A-489B-AE14-246CF6811563}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0E87AFE-1E1A-489B-AE14-246CF6811563}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0E87AFE-1E1A-489B-AE14-246CF6811563}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0E87AFE-1E1A-489B-AE14-246CF6811563}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AD01D100-8A15-4AEC-9C40-4ED6EB64C49E}
+	EndGlobalSection
+EndGlobal
