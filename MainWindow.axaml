@@ -9,9 +9,9 @@
 	<Grid RowDefinitions="*, Auto, *">
 		<TreeDataGrid Name="heapTree" Grid.Row="0" />
 		<GridSplitter Grid.Row="1" Background="Gray" ResizeDirection="Rows" />
-		<StackPanel Grid.Row="2">
-			<TextBlock Text="Retainers:" Margin="4,8,8,8" />
-			<TreeDataGrid Name="retainersTree" />
-		</StackPanel>
+		<Grid Grid.Row="2" RowDefinitions="Auto, *">
+			<TextBlock Grid.Row="0" Text="Retainers:" Margin="4,8,8,8" />
+			<TreeDataGrid Grid.Row="1" Name="retainersTree" />
+		</Grid>
 	</Grid>
 </Window>
