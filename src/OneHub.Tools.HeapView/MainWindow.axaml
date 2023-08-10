@@ -6,7 +6,8 @@
 		xmlns:heapView="using:OneHub.Diagnostics.HeapView"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OneHub.Tools.HeapView.MainWindow"
-        Title="Heap View">
+        Title="Heap View"
+		DragDrop.AllowDrop="True">
 	<heapView:HeapView Name="heapView">
 	</heapView:HeapView>
 </Window>

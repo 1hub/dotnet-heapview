@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "dotnet-heapview": {
+      "commandName": "Project"
+    }
+  }
+}

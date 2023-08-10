@@ -1,19 +1,53 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Platform.Storage;
 using OneHub.Diagnostics.HeapView;
+using System.Linq;
+using System;
 
 namespace OneHub.Tools.HeapView;
 
 public partial class MainWindow : Window
 {
-    HeapSnapshot heapSnapshot;
-
-    public MainWindow(string fileName)
+    public MainWindow()
     {
         InitializeComponent();
 
-        var heapDump = new GCHeapDump(fileName);
-        heapSnapshot = new HeapSnapshot(heapDump);
+        AddHandler(DragDrop.DragOverEvent, DragOver);
+        AddHandler(DragDrop.DropEvent, Drop);
+    }
+    
+    public void Open(string fileName)
+    {
+        try
+        {
+            var heapDump = new GCHeapDump(fileName);
+            var heapSnapshot = new HeapSnapshot(heapDump);
+            heapView.Snapshot = heapSnapshot;
+        }
+        catch (Exception ex)
+        {
+            // TODO: Show error
+        }
+    }
 
-        heapView.Snapshot = heapSnapshot;
+    private void DragOver(object? sender, DragEventArgs e)
+    {
+        if (!e.Data.Contains(DataFormats.Files) || e.Data.GetFiles()?.FirstOrDefault() is not IStorageFile)
+            e.DragEffects = DragDropEffects.None;
+        else
+            e.DragEffects = DragDropEffects.Move;
+    }
+
+    private void Drop(object? sender, DragEventArgs e)
+    {
+        if (e.Data.Contains(DataFormats.Files))
+        {
+            var files = e.Data.GetFiles()?.OfType<IStorageFile>().ToArray();
+            if (files?.FirstOrDefault()?.TryGetLocalPath() is string path)
+            {
+                Open(path);
+            }
+        }
     }
 }
