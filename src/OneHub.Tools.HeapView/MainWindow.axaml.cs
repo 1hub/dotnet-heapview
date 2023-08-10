@@ -50,4 +50,18 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    public async void OnOpenClicked(object? sender, EventArgs args)
+    {
+        var options = new FilePickerOpenOptions
+        {
+            AllowMultiple = false,
+            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump" } } }
+        };
+        var result = await StorageProvider.OpenFilePickerAsync(options);
+        if (result != null && result.Count == 1 && result[0].TryGetLocalPath() is string path)
+        {
+            Open(path);
+        }
+    }
 }

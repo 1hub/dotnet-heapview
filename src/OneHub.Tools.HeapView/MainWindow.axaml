@@ -8,6 +8,21 @@
         x:Class="OneHub.Tools.HeapView.MainWindow"
         Title="Heap View"
 		DragDrop.AllowDrop="True">
-	<heapView:HeapView Name="heapView">
-	</heapView:HeapView>
+
+	<NativeMenu.Menu>
+		<NativeMenu>
+			<NativeMenuItem Header="File">
+				<NativeMenu>
+					<NativeMenuItem Header="Open" Click="OnOpenClicked" Gesture="Ctrl+O"/>
+				</NativeMenu>
+			</NativeMenuItem>
+		</NativeMenu>
+	</NativeMenu.Menu>
+
+	<Grid RowDefinitions="Auto, *">
+		<NativeMenuBar Grid.Row="0" />
+		<heapView:HeapView Grid.Row="1" Name="heapView">
+		</heapView:HeapView>
+	</Grid>
+	
 </Window>
