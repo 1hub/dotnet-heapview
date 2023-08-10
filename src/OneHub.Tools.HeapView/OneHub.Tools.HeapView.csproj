@@ -13,8 +13,8 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-heapview</ToolCommandName>
     <PackageOutputPath>..\..\nupkg</PackageOutputPath>
-    <PackageReadmeFile>..\..\README.md</PackageReadmeFile>
-    <PackageLicenseFile>..\..\LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
