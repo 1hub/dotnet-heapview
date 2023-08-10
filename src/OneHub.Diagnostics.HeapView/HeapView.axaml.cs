@@ -40,6 +40,8 @@ public partial class HeapView : UserControl
 
         heapSource.SortBy(retainedSizeColumn, System.ComponentModel.ListSortDirection.Descending);
 
+        TextColumn<IMemoryNode, int> distanceToRootColumn;
+
         retainersSource = new HierarchicalTreeDataGridSource<IMemoryNode>(retainersNodes)
         {
             Columns =
@@ -47,8 +49,11 @@ public partial class HeapView : UserControl
                 new HierarchicalExpanderColumn<IMemoryNode>(
                     new TextColumn<IMemoryNode, string>("Name", x => x.Name, GridLength.Star),
                     x => x.Children),
+                (distanceToRootColumn = new TextColumn<IMemoryNode, int>("Distance to root", x => x.Depth)),
             },
         };
+
+        retainersSource.SortBy(distanceToRootColumn, System.ComponentModel.ListSortDirection.Ascending);
 
         heapSource.RowSelection!.SelectionChanged += RowSelection_SelectionChanged;
 
@@ -110,7 +115,8 @@ public partial class HeapView : UserControl
         string Name { get; }
         ulong Size { get; }
         ulong RetainedSize { get; }
-        IReadOnlyList<IMemoryNode> Children { get; }
+        int Depth { get; }
+        IReadOnlyList <IMemoryNode> Children { get; }
     }
 
     class MemoryNode : IMemoryNode
@@ -124,7 +130,6 @@ public partial class HeapView : UserControl
             var address = heapSnapshot.MemoryGraph.GetAddress(node.Index);
             Name = address > 0 ? $"{name} @ {address:x}" : name;
             Size = (ulong)node.Size;
-            RetainedSize = heapSnapshot.GetRetainedSize(node.Index);
             HeapSnapshot = heapSnapshot;
             NodeIndex = node.Index;
             ChildrenAreRetainers = childrenAreRetainers;
@@ -135,7 +140,8 @@ public partial class HeapView : UserControl
 
         public string Name { get; init; }
         public ulong Size { get; init; }
-        public ulong RetainedSize { get; init; }
+        public ulong RetainedSize => HeapSnapshot.GetRetainedSize(NodeIndex);
+        public int Depth => HeapSnapshot.GetDepth(NodeIndex);
         public bool ChildrenAreRetainers { get; init; }
 
         public IReadOnlyList<IMemoryNode> Children
@@ -184,6 +190,7 @@ public partial class HeapView : UserControl
         public required string Name { get; init; }
         public ulong Size { get; set; } = 0;
         public ulong RetainedSize { get; set; } = 0;
+        public int Depth => 0;
         public IReadOnlyList<IMemoryNode> Children => MutableChildren;
         public List<IMemoryNode> MutableChildren { get; } = new List<IMemoryNode>();
     }

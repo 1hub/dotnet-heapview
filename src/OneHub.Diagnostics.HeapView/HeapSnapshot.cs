@@ -12,6 +12,7 @@ public class HeapSnapshot
     private RefGraph refGraph;
 
     private int[] postOrderIndex2NodeIndex;
+    private int[] nodeIndex2Depth;
     //private int[]? nodeIndex2PostOrderIndex;
     //private int[] dominatorsTree;
     private ulong[] retainedSizes;
@@ -19,12 +20,14 @@ public class HeapSnapshot
     public MemoryGraph MemoryGraph => heapDump.MemoryGraph;
     public RefGraph RefGraph => refGraph;
     public ulong GetRetainedSize(NodeIndex nodeIndex) => retainedSizes[(int)nodeIndex];
+    public int GetDepth(NodeIndex nodeIndex) => nodeIndex2Depth[(int)nodeIndex];
 
     public HeapSnapshot(GCHeapDump heapDump)
     {
         this.heapDump = heapDump;
         this.refGraph = new RefGraph(heapDump.MemoryGraph);
         BuildPostOrderIndex();
+        BuildDepthIndex();
         CalculateRetainedSizes();
         Debug.Assert(postOrderIndex2NodeIndex != null);
         Debug.Assert(retainedSizes != null);
@@ -64,6 +67,41 @@ public class HeapSnapshot
                 postOrderIndex++;
                 nodeStack.Pop();
             }
+        }
+    }
+
+    private void BuildDepthIndex()
+    {
+        var graph = this.heapDump.MemoryGraph;
+        nodeIndex2Depth = new int[(int)graph.NodeIndexLimit];
+        var visited = new BitArray((int)graph.NodeIndexLimit);
+        var nodeStack = new Stack<NodeIndex>();
+        var nodeStack2 = new Stack<NodeIndex>();
+        var nodeStorage = graph.AllocNodeStorage();
+        int depth = 0;
+
+        nodeStack.Push(graph.RootIndex);
+        visited.Set((int)graph.RootIndex, true);
+        while (nodeStack.Count > 0)
+        {
+            while (nodeStack.Count > 0)
+            {
+                var currentNode = graph.GetNode(nodeStack.Pop(), nodeStorage);
+                nodeIndex2Depth[(int)currentNode.Index] = depth;
+                for (NodeIndex childIndex = currentNode.GetFirstChildIndex();
+                     childIndex != NodeIndex.Invalid;
+                     childIndex = currentNode.GetNextChildIndex())
+                {
+                    if (!visited.Get((int)childIndex))
+                    {
+                        nodeStack2.Push(childIndex);
+                        visited.Set((int)childIndex, true);
+                    }
+                }
+            }
+
+            (nodeStack2, nodeStack) = (nodeStack, nodeStack2);
+            depth++;
         }
     }
 
