@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace OneHub.Tools.HeapView;
+namespace OneHub.Diagnostics.HeapView;
 
-internal class HeapSnapshot
+public class HeapSnapshot
 {
     private GCHeapDump heapDump;
     private RefGraph refGraph;

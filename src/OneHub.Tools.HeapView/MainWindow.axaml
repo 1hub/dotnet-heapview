@@ -3,15 +3,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:local="clr-namespace:OneHub.Tools.HeapView"
+		xmlns:heapView="using:OneHub.Diagnostics.HeapView"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="OneHub.Tools.HeapView.MainWindow"
         Title="Heap View">
-	<Grid RowDefinitions="*, Auto, *">
-		<TreeDataGrid Name="heapTree" Grid.Row="0" />
-		<GridSplitter Grid.Row="1" Background="Gray" ResizeDirection="Rows" />
-		<Grid Grid.Row="2" RowDefinitions="Auto, *">
-			<TextBlock Grid.Row="0" Text="Retainers:" Margin="4,8,8,8" />
-			<TreeDataGrid Grid.Row="1" Name="retainersTree" />
-		</Grid>
-	</Grid>
+	<heapView:HeapView Name="heapView">
+	</heapView:HeapView>
 </Window>

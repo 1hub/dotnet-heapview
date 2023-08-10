@@ -20,9 +20,9 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Build
-      run: dotnet build -c Release
+      run: dotnet build -c Release src/OneHub.Tools.HeapView/OneHub.Tools.HeapView.csproj
     - name: Pack      
-      run: dotnet pack -c Release
+      run: dotnet pack -c Release src/OneHub.Tools.HeapView/OneHub.Tools.HeapView.csproj
     - name: Publish the package to nuget.org
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       run: dotnet nuget push nupkg/*.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json

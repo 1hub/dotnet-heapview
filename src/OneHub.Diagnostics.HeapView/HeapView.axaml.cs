@@ -5,44 +5,28 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace OneHub.Tools.HeapView;
+namespace OneHub.Diagnostics.HeapView;
 
-public partial class MainWindow : Window
+public partial class HeapView : UserControl
 {
-    HeapSnapshot heapSnapshot;
+    private HeapSnapshot? heapSnapshot;
 
-    public MainWindow(string fileName)
+    private ObservableCollection<IMemoryNode> heapNodes;
+    private ObservableCollection<IMemoryNode> retainersNodes;
+
+    private HierarchicalTreeDataGridSource<IMemoryNode> heapSource;
+    private HierarchicalTreeDataGridSource<IMemoryNode> retainersSource;
+
+    public HeapView()
     {
         InitializeComponent();
-
-        var heapDump = new GCHeapDump(fileName);
-        heapSnapshot = new HeapSnapshot(heapDump);
 
         heapNodes = new();
         retainersNodes = new();
 
-        var nodeStorage = heapDump.MemoryGraph.AllocNodeStorage();
-        var typeStorage = heapDump.MemoryGraph.AllocTypeNodeStorage();
-        var typeNodes = new Dictionary<NodeTypeIndex, GroupedTypeMemoryNode>();
-        for (NodeIndex nodeIndex = 0; nodeIndex < heapDump.MemoryGraph.NodeIndexLimit; nodeIndex++)
-        {
-            var node = heapDump.MemoryGraph.GetNode(nodeIndex, nodeStorage);
-            if (node.Size > 0)
-            {
-                if (!typeNodes.TryGetValue(node.TypeIndex, out var groupedTypeMemoryNode))
-                    typeNodes.Add(node.TypeIndex, groupedTypeMemoryNode = new GroupedTypeMemoryNode { Name = heapDump.MemoryGraph.GetType(node.TypeIndex, typeStorage).Name, Size = 0 });
-                groupedTypeMemoryNode.Size += (ulong)node.Size;
-                groupedTypeMemoryNode.RetainedSize += heapSnapshot.GetRetainedSize(nodeIndex);
-                groupedTypeMemoryNode.MutableChildren.Add(new MemoryNode(heapSnapshot, node, groupedTypeMemoryNode.Name));
-            }
-        }
-
-        foreach (var topNode in typeNodes.Values)
-            heapNodes.Add(topNode);
-
         TextColumn<IMemoryNode, ulong> retainedSizeColumn;
 
-        HeapSource = new HierarchicalTreeDataGridSource<IMemoryNode>(heapNodes)
+        heapSource = new HierarchicalTreeDataGridSource<IMemoryNode>(heapNodes)
         {
             Columns =
             {
@@ -54,9 +38,9 @@ public partial class MainWindow : Window
             },
         };
 
-        HeapSource.SortBy(retainedSizeColumn, System.ComponentModel.ListSortDirection.Descending);
+        heapSource.SortBy(retainedSizeColumn, System.ComponentModel.ListSortDirection.Descending);
 
-        RetainersSource = new HierarchicalTreeDataGridSource<IMemoryNode>(retainersNodes)
+        retainersSource = new HierarchicalTreeDataGridSource<IMemoryNode>(retainersNodes)
         {
             Columns =
             {
@@ -66,9 +50,10 @@ public partial class MainWindow : Window
             },
         };
 
-        heapTree.Source = HeapSource;
-        retainersTree.Source = RetainersSource;
-        HeapSource.RowSelection!.SelectionChanged += RowSelection_SelectionChanged;
+        heapSource.RowSelection!.SelectionChanged += RowSelection_SelectionChanged;
+
+        heapTree.Source = heapSource;
+        retainersTree.Source = retainersSource;
     }
 
     private void RowSelection_SelectionChanged(object? sender, Avalonia.Controls.Selection.TreeSelectionModelSelectionChangedEventArgs<IMemoryNode> e)
@@ -79,15 +64,46 @@ public partial class MainWindow : Window
             var node = memoryNode.HeapSnapshot.MemoryGraph.GetNode(memoryNode.NodeIndex, memoryNode.HeapSnapshot.MemoryGraph.AllocNodeStorage());
             var refMemoryNode = new MemoryNode(memoryNode.HeapSnapshot, node, childrenAreRetainers: true);
             retainersNodes.Add(refMemoryNode);
-            RetainersSource.Expand(new IndexPath(0));
+            retainersSource.Expand(new IndexPath(0));
         }
     }
 
-    private ObservableCollection<IMemoryNode> heapNodes;
-    private ObservableCollection<IMemoryNode> retainersNodes;
+    public HeapSnapshot? Snapshot
+    {
+        get => heapSnapshot;
+        set
+        {
+            if (heapSnapshot != value)
+            {
+                heapSnapshot = value;
 
-    public HierarchicalTreeDataGridSource<IMemoryNode> HeapSource { get; }
-    public HierarchicalTreeDataGridSource<IMemoryNode> RetainersSource { get; }
+                heapNodes.Clear();
+                retainersNodes.Clear();
+
+                if (heapSnapshot is not null)
+                {
+                    var nodeStorage = heapSnapshot.MemoryGraph.AllocNodeStorage();
+                    var typeStorage = heapSnapshot.MemoryGraph.AllocTypeNodeStorage();
+                    var typeNodes = new Dictionary<NodeTypeIndex, GroupedTypeMemoryNode>();
+                    for (NodeIndex nodeIndex = 0; nodeIndex < heapSnapshot.MemoryGraph.NodeIndexLimit; nodeIndex++)
+                    {
+                        var node = heapSnapshot.MemoryGraph.GetNode(nodeIndex, nodeStorage);
+                        if (node.Size > 0)
+                        {
+                            if (!typeNodes.TryGetValue(node.TypeIndex, out var groupedTypeMemoryNode))
+                                typeNodes.Add(node.TypeIndex, groupedTypeMemoryNode = new GroupedTypeMemoryNode { Name = heapSnapshot.MemoryGraph.GetType(node.TypeIndex, typeStorage).Name, Size = 0 });
+                            groupedTypeMemoryNode.Size += (ulong)node.Size;
+                            groupedTypeMemoryNode.RetainedSize += heapSnapshot.GetRetainedSize(nodeIndex);
+                            groupedTypeMemoryNode.MutableChildren.Add(new MemoryNode(heapSnapshot, node, groupedTypeMemoryNode.Name));
+                        }
+                    }
+
+                    foreach (var topNode in typeNodes.Values)
+                        heapNodes.Add(topNode);
+                }
+            }
+        }
+    }
 
     public interface IMemoryNode
     {

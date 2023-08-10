@@ -1,12 +1,7 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
+﻿using FastSerialization;
 using System.Collections.Generic;
 using System.Diagnostics;
-using FastSerialization;
 using Address = System.UInt64;
-
-// Copy of version in Microsoft/PerfView
 
 namespace Graphs
 {
@@ -19,37 +14,37 @@ namespace Graphs
             // Therefore use a new implementation of it that is similar in performance but that can handle the extra load.
             if (isVeryLargeGraph)
             {
-                m_addressToNodeIndex = new SegmentedDictionary<ulong, NodeIndex>(expectedSize);
+                m_addressToNodeIndex = new SegmentedDictionary<Address, NodeIndex>(expectedSize);
             }
             else
             {
-                m_addressToNodeIndex = new Dictionary<ulong, NodeIndex>(expectedSize);
+                m_addressToNodeIndex = new Dictionary<Address, NodeIndex>(expectedSize);
             }
-
-            m_nodeAddresses = new SegmentedList<ulong>(SegmentSize, expectedSize);
+                                                              
+            m_nodeAddresses = new SegmentedList<Address>(SegmentSize, expectedSize);
         }
 
         public void WriteAsBinaryFile(string outputFileName)
         {
-            Serializer serializer = new(outputFileName, this);
+            Serializer serializer = new Serializer(outputFileName, this);
             serializer.Close();
         }
         public static MemoryGraph ReadFromBinaryFile(string inputFileName)
         {
-            Deserializer deserializer = new(inputFileName);
+            Deserializer deserializer = new Deserializer(inputFileName);
             deserializer.TypeResolver = typeName => System.Type.GetType(typeName);  // resolve types in this assembly (and mscorlib)
-            deserializer.RegisterFactory(typeof(MemoryGraph), delegate { return new MemoryGraph(1); });
-            deserializer.RegisterFactory(typeof(Module), delegate { return new Module(0); });
+            deserializer.RegisterFactory(typeof(MemoryGraph), delegate () { return new MemoryGraph(1); });
+            deserializer.RegisterFactory(typeof(Graphs.Module), delegate () { return new Graphs.Module(0); });
             return (MemoryGraph)deserializer.GetEntryObject();
         }
 
         /// <summary>
         /// Indicates whether the memory addresses are 64 bit or not.   Note that this is not set
-        /// as part of normal graph processing, it needs to be set by the caller.   MemoryGraph is only
-        /// acting as storage.
+        /// as part of normal graph processing, it needs to be set by the caller.   MemoryGraph is only 
+        /// acting as storage.  
         /// </summary>
         public bool Is64Bit { get; set; }
-        public ulong GetAddress(NodeIndex nodeIndex)
+        public Address GetAddress(NodeIndex nodeIndex)
         {
             if (nodeIndex == NodeIndex.Invalid)
             {
@@ -58,14 +53,14 @@ namespace Graphs
 
             return m_nodeAddresses[(int)nodeIndex];
         }
-        public void SetAddress(NodeIndex nodeIndex, ulong nodeAddress)
+        public void SetAddress(NodeIndex nodeIndex, Address nodeAddress)
         {
             Debug.Assert(m_nodeAddresses[(int)nodeIndex] == 0, "Calling SetAddress twice for node index " + nodeIndex);
             m_nodeAddresses[(int)nodeIndex] = nodeAddress;
         }
         public override NodeIndex CreateNode()
         {
-            NodeIndex ret = base.CreateNode();
+            var ret = base.CreateNode();
             m_nodeAddresses.Add(0);
             Debug.Assert(m_nodeAddresses.Count == m_nodes.Count);
             return ret;
@@ -79,7 +74,7 @@ namespace Graphs
             return base.SizeOfGraphDescription() + 8 * m_nodeAddresses.Count;
         }
         /// <summary>
-        /// Returns the number of distinct references in the graph so far (the size of the interning table).
+        /// Returns the number of distinct references in the graph so far (the size of the interning table).  
         /// </summary>
         public int DistinctRefCount { get { return m_addressToNodeIndex.Count; } }
 
@@ -96,7 +91,7 @@ namespace Graphs
 
         public override void AllowReading()
         {
-            m_addressToNodeIndex = null;            // We are done with this, abandon it.
+            m_addressToNodeIndex = null;            // We are done with this, abandon it.  
             base.AllowReading();
         }
 
@@ -104,9 +99,10 @@ namespace Graphs
         /// GetNodeIndex maps an Memory address of an object (used by CLRProfiler), to the NodeIndex we have assigned to it
         /// It is essentially an interning table (we assign it new index if we have  not seen it before)
         /// </summary>
-        public NodeIndex GetNodeIndex(ulong objectAddress)
+        public NodeIndex GetNodeIndex(Address objectAddress)
         {
-            if (!m_addressToNodeIndex.TryGetValue(objectAddress, out NodeIndex nodeIndex))
+            NodeIndex nodeIndex;
+            if (!m_addressToNodeIndex.TryGetValue(objectAddress, out nodeIndex))
             {
                 nodeIndex = CreateNode();
                 m_nodeAddresses[(int)nodeIndex] = objectAddress;
@@ -115,17 +111,17 @@ namespace Graphs
             Debug.Assert(m_nodeAddresses[(int)nodeIndex] == objectAddress);
             return nodeIndex;
         }
-        public bool IsInGraph(ulong objectAddress)
+        public bool IsInGraph(Address objectAddress)
         {
             return m_addressToNodeIndex.ContainsKey(objectAddress);
         }
 
         /// <summary>
-        /// ClrProfiler identifes nodes  using the physical address in Memory.  'Graph' needs it to be an NodeIndex.
-        /// THis table maps the ID that CLRProfiler uses (an address), to the NodeIndex we have assigned to it.
-        /// It is only needed while the file is being read in.
+        /// ClrProfiler identifes nodes  using the physical address in Memory.  'Graph' needs it to be an NodeIndex.   
+        /// THis table maps the ID that CLRProfiler uses (an address), to the NodeIndex we have assigned to it.  
+        /// It is only needed while the file is being read in.  
         /// </summary>
-        protected IDictionary<ulong, NodeIndex> m_addressToNodeIndex;    // This field is only used during construction
+        protected IDictionary<Address, NodeIndex> m_addressToNodeIndex;    // This field is only used during construction
 
         #endregion
         #region private
@@ -141,7 +137,7 @@ namespace Graphs
             {
                 serializer.Write((int)m_nodeAddresses.Count);
             }
-
+            
             for (int i = 0; i < m_nodeAddresses.Count; i++)
             {
                 serializer.Write((long)m_nodeAddresses[i]);
@@ -153,13 +149,13 @@ namespace Graphs
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
             base.FromStream(deserializer);
-            // Read in the Memory addresses of each object
+            // Read in the Memory addresses of each object 
             long addressCount = m_isVeryLargeGraph ? deserializer.ReadInt64() : deserializer.ReadInt();
-            m_nodeAddresses = new SegmentedList<ulong>(SegmentSize, addressCount);
+            m_nodeAddresses = new SegmentedList<Address>(SegmentSize, addressCount);
 
             for (long i = 0; i < addressCount; i++)
             {
-                m_nodeAddresses.Add((ulong)deserializer.ReadInt64());
+                m_nodeAddresses.Add((Address)deserializer.ReadInt64());
             }
 
             bool is64bit = false;
@@ -169,7 +165,7 @@ namespace Graphs
 
         // This array survives after the constructor completes
         // TODO Fold this into the existing blob. Currently this dominates the Size cost of the graph!
-        protected SegmentedList<ulong> m_nodeAddresses;
+        protected SegmentedList<Address> m_nodeAddresses;
         #endregion
     }
 
@@ -178,7 +174,7 @@ namespace Graphs
     /// </summary>
     public class MemoryNode : Node
     {
-        public ulong Address { get { return m_memoryGraph.GetAddress(Index); } }
+        public Address Address { get { return m_memoryGraph.GetAddress(Index); } }
         #region private
         internal MemoryNode(MemoryGraph graph)
             : base(graph)
@@ -188,7 +184,7 @@ namespace Graphs
 
         public override void WriteXml(System.IO.TextWriter writer, bool includeChildren = true, string prefix = "", NodeType typeStorage = null, string additinalAttribs = "")
         {
-            ulong end = Address + (uint)Size;
+            Address end = Address + (uint)Size;
             // base.WriteXml(writer, prefix, storage, typeStorage, additinalAttribs + " Address=\"0x" + Address.ToString("x") + "\"");
             base.WriteXml(writer, includeChildren, prefix, typeStorage,
                 additinalAttribs + " Address=\"0x" + Address.ToString("x") + "\""
@@ -232,11 +228,11 @@ namespace Graphs
         /// <summary>
         /// Looks for a child with the type 'childTypeName' and returns it.  If it is not
         /// present, it will be created.  Note it will ONLY find MutableNode children
-        /// (not children added with AddChild(NodeIndex).
+        /// (not children added with AddChild(NodeIndex).  
         /// </summary>
         public MemoryNodeBuilder FindOrCreateChild(string childTypeName, string childModuleName = null)
         {
-            foreach (MemoryNodeBuilder child in m_mutableChildren)
+            foreach (var child in m_mutableChildren)
             {
                 if (child.TypeName == childTypeName)
                 {
@@ -244,7 +240,7 @@ namespace Graphs
                 }
             }
 
-            MemoryNodeBuilder ret = new(m_graph, childTypeName, childModuleName);
+            var ret = new MemoryNodeBuilder(m_graph, childTypeName, childModuleName);
             AddChild(ret);
             return ret;
         }
@@ -259,7 +255,7 @@ namespace Graphs
         }
 
         /// <summary>
-        /// This is optional phase, if you don't do it explicitly, it gets done at Build time.
+        /// This is optional phase, if you don't do it explicitly, it gets done at Build time. 
         /// </summary>
         public void AllocateTypeIndexes()
         {
@@ -277,9 +273,9 @@ namespace Graphs
             {
                 Debug.Assert(m_unmutableChildren.Count >= m_mutableChildren.Count);
                 m_graph.SetNode(Index, m_typeIndex, Size, m_unmutableChildren);
-                List<MemoryNodeBuilder> mutableChildren = m_mutableChildren;
+                var mutableChildren = m_mutableChildren;
                 m_mutableChildren = null;           // Signals that I have been built
-                foreach (MemoryNodeBuilder child in mutableChildren)
+                foreach (var child in mutableChildren)
                 {
                     child.Build();
                 }
@@ -298,7 +294,7 @@ namespace Graphs
                     m_typeIndex = m_graph.CreateType(TypeName, ModuleName);
                     types.Add(TypeName, m_typeIndex);
                 }
-                foreach (MemoryNodeBuilder child in m_mutableChildren)
+                foreach (var child in m_mutableChildren)
                 {
                     child.AllocateTypeIndexes(types);
                 }
@@ -313,7 +309,7 @@ namespace Graphs
     }
 }
 
-#if false
+#if false 
 namespace Graphs.Samples
 {
     class Sample
