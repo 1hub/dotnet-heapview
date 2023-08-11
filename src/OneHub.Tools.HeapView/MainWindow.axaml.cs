@@ -4,6 +4,7 @@ using Avalonia.Platform.Storage;
 using OneHub.Diagnostics.HeapView;
 using System.Linq;
 using System;
+using System.IO;
 
 namespace OneHub.Tools.HeapView;
 
@@ -21,8 +22,18 @@ public partial class MainWindow : Window
     {
         try
         {
-            var heapDump = new GCHeapDump(fileName);
-            var heapSnapshot = new HeapSnapshot(heapDump);
+            HeapSnapshot heapSnapshot;
+            switch (Path.GetExtension(fileName))
+            {
+                case ".gcdump":
+                    var heapDump = new GCHeapDump(fileName);
+                    heapSnapshot = new HeapSnapshot(heapDump);
+                    break;
+                default:
+                    var memoryDump = new MemoryDump(fileName);
+                    heapSnapshot = memoryDump.Snapshot;
+                    break;
+            }
             heapView.Snapshot = heapSnapshot;
         }
         catch (Exception ex)
