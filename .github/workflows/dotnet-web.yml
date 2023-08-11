@@ -1,4 +1,4 @@
-name: .NET
+name: Web
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Install workloads
-      run: dotnet workload install wasm-tools-net7
+      run: dotnet workload install wasm-tools
     - name: Build web
       run: dotnet publish src/OneHub.Tools.HeapView.Web/OneHub.Tools.HeapView.Web.csproj -c Release
     - name: Upload Pages artifact
