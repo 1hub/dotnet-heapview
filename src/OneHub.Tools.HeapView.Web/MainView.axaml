@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:local="using:OneHub.Tools.HeapView"
+		xmlns:heapView="using:OneHub.Diagnostics.HeapView"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="OneHub.Tools.HeapView.MainView"
+        x:DataType="local:MainViewModel">
+
+	<Grid RowDefinitions="*" DragDrop.AllowDrop="true">
+		<Grid Grid.Row="0">
+			<Grid.IsVisible>
+				<MultiBinding Mode="OneWay" Converter="{x:Static BoolConverters.And}">
+					<Binding Path="CurrentData" Converter="{x:Static ObjectConverters.IsNull}" />
+					<Binding Path="Loading" Converter="{x:Static BoolConverters.Not}" />
+				</MultiBinding>
+			</Grid.IsVisible>
+			<StackPanel Margin="0,-40,0,0" HorizontalAlignment="Center" VerticalAlignment="Center">
+				<TextBlock FontSize="24" Text="Welcome" HorizontalAlignment="Center" />
+				<Button Margin="0,8,0,0" Content="Open a file to continue..." Click="OnOpenClicked" HorizontalAlignment="Center" />
+			</StackPanel>
+		</Grid>
+		<ProgressBar Grid.Row="0" IsVisible="{Binding Loading}" IsIndeterminate="true" Width="150" />
+		<heapView:HeapView Grid.Row="0" Name="heapView" IsVisible="{Binding CurrentData, Converter={x:Static ObjectConverters.IsNotNull},Mode=OneWay}">
+		</heapView:HeapView>
+	</Grid>
+	
+</UserControl>
