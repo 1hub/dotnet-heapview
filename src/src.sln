@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneHub.Diagnostics.HeapView
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneHub.Tools.HeapView", "OneHub.Tools.HeapView\OneHub.Tools.HeapView.csproj", "{3BA7407B-E41C-4ACC-AC97-9C5CEE88676B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OneHub.Tools.HeapView.Web", "OneHub.Tools.HeapView.Web\OneHub.Tools.HeapView.Web.csproj", "{484B0F75-EECE-4CB3-B063-2F33B7698DAA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{3BA7407B-E41C-4ACC-AC97-9C5CEE88676B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BA7407B-E41C-4ACC-AC97-9C5CEE88676B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BA7407B-E41C-4ACC-AC97-9C5CEE88676B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{484B0F75-EECE-4CB3-B063-2F33B7698DAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{484B0F75-EECE-4CB3-B063-2F33B7698DAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{484B0F75-EECE-4CB3-B063-2F33B7698DAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{484B0F75-EECE-4CB3-B063-2F33B7698DAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,52 @@
+name: Web
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: Install workloads
+      run: dotnet workload install wasm-tools
+    - name: Build web
+      run: dotnet publish src/OneHub.Tools.HeapView.Web/OneHub.Tools.HeapView.Web.csproj -c Release
+    - name: Fix permissions
+      run: |
+        chmod -v -R +rX "src/OneHub.Tools.HeapView.Web/bin/Release/net7.0/browser-wasm/AppBundle/" | while read line; do
+          echo "::warning title=Invalid file permissions automatically fixed::$line"
+        done
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: src/OneHub.Tools.HeapView.Web/bin/Release/net7.0/browser-wasm/AppBundle
+
+  deploy:
+    needs: build
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

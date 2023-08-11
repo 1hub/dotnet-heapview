@@ -1,33 +1,37 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using OneHub.Diagnostics.HeapView;
-using System.Linq;
 using System;
+using System.Linq;
 
 namespace OneHub.Tools.HeapView;
 
-public partial class MainWindow : Window
+public partial class MainView : UserControl
 {
-    public MainWindow()
+    private readonly MainViewModel viewModel = new();
+
+    private IStorageProvider StorageProvider => TopLevel.GetTopLevel(this)?.StorageProvider ?? throw new InvalidOperationException("Invalid owner.");
+
+    public MainView()
     {
         InitializeComponent();
+
+        DataContext = viewModel;
 
         AddHandler(DragDrop.DragOverEvent, DragOver);
         AddHandler(DragDrop.DropEvent, Drop);
     }
     
-    public void Open(string fileName)
+    public async void Open(IStorageFile storageFile)
     {
         try
         {
-            var heapDump = new GCHeapDump(fileName);
-            var heapSnapshot = new HeapSnapshot(heapDump);
-            heapView.Snapshot = heapSnapshot;
+            await viewModel.LoadDataAsync(storageFile);
+            heapView.Snapshot = viewModel.CurrentData;
         }
         catch (Exception ex)
         {
-            // TODO: Show error
             Console.WriteLine(ex);
         }
     }
@@ -45,14 +49,14 @@ public partial class MainWindow : Window
         if (e.Data.Contains(DataFormats.Files))
         {
             var files = e.Data.GetFiles()?.OfType<IStorageFile>().ToArray();
-            if (files?.FirstOrDefault()?.TryGetLocalPath() is string path)
+            if (files?.FirstOrDefault() is IStorageFile storageFile)
             {
-                Open(path);
+                Open(storageFile);
             }
         }
     }
 
-    public async void OnOpenClicked(object? sender, EventArgs args)
+    public async void OnOpenClicked(object? sender, RoutedEventArgs args)
     {
         var options = new FilePickerOpenOptions
         {
@@ -60,9 +64,9 @@ public partial class MainWindow : Window
             FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump" } } }
         };
         var result = await StorageProvider.OpenFilePickerAsync(options);
-        if (result != null && result.Count == 1 && result[0].TryGetLocalPath() is string path)
+        if (result != null && result.Count == 1 && result[0] is IStorageFile storageFile)
         {
-            Open(path);
+            Open(storageFile);
         }
     }
 }

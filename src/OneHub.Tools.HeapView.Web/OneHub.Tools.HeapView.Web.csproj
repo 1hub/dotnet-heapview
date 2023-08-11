@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <WasmMainJSPath>AppBundle\main.js</WasmMainJSPath>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <PublishTrimmed>true</PublishTrimmed>
+    <WasmBuildNative>true</WasmBuildNative>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TrimMode>full</TrimMode>
+    <EmccCompileOptimizationFlag>-O2</EmccCompileOptimizationFlag>
+    <EmccLinkOptimizationFlag>-O2</EmccLinkOptimizationFlag>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <WasmExtraFilesToDeploy Include="AppBundle\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Browser" Version="11.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OneHub.Diagnostics.HeapView\OneHub.Diagnostics.HeapView.csproj" />
+  </ItemGroup>
+
+</Project>
