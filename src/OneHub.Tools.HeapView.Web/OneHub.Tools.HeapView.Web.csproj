@@ -6,9 +6,10 @@
     <WasmMainJSPath>AppBundle\main.js</WasmMainJSPath>
     <OutputType>Exe</OutputType>
     <Nullable>enable</Nullable>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
-  <!--<PropertyGroup Condition="'$(Configuration)'=='Release'">
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <RunAOTCompilation>true</RunAOTCompilation>
     <PublishTrimmed>true</PublishTrimmed>
     <WasmBuildNative>true</WasmBuildNative>
@@ -16,7 +17,7 @@
     <TrimMode>full</TrimMode>
     <EmccCompileOptimizationFlag>-O2</EmccCompileOptimizationFlag>
     <EmccLinkOptimizationFlag>-O2</EmccLinkOptimizationFlag>
-  </PropertyGroup>-->
+  </PropertyGroup>
 
   <ItemGroup>
     <WasmExtraFilesToDeploy Include="AppBundle\**" />
