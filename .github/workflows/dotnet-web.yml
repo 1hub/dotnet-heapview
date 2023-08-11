@@ -25,7 +25,8 @@ jobs:
       run: dotnet publish src/OneHub.Tools.HeapView.Web/OneHub.Tools.HeapView.Web.csproj -c Release
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v2
-      path: src/OneHub.Tools.HeapView.Web/bin/Release/net7.0/browser-wasm/AppBundle
+      with:
+        path: src/OneHub.Tools.HeapView.Web/bin/Release/net7.0/browser-wasm/AppBundle
 
   deploy:
     needs: build
