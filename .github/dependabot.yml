@@ -5,6 +5,7 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      avalonia:
+      Avalonia:
         patterns:
+        - "Avalonia"
         - "Avalonia.*"
