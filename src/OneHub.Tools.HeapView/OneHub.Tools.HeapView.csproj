@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Microsoft.Diagnostics.Heap\Microsoft.Diagnostics.Heap.csproj" />
     <ProjectReference Include="..\OneHub.Diagnostics.HeapView\OneHub.Diagnostics.HeapView.csproj" />
   </ItemGroup>
 
