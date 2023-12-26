@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace OneHub.Diagnostics.HeapView;
@@ -70,6 +71,7 @@ public class HeapSnapshot
         }
     }
 
+    [MemberNotNull(nameof(nodeIndex2Depth))]
     private void BuildDepthIndex()
     {
         var graph = this.heapDump.MemoryGraph;
