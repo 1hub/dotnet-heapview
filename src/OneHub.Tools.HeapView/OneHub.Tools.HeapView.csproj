@@ -16,6 +16,7 @@
     <PackageOutputPath>..\..\nupkg</PackageOutputPath>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <RollForward>major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
