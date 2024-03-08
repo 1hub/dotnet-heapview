@@ -1,9 +1,13 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
+using Avalonia.Threading;
 using Graphs;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace OneHub.Diagnostics.HeapView;
 
@@ -17,9 +21,32 @@ public partial class HeapView : UserControl
     private HierarchicalTreeDataGridSource<IMemoryNode> heapSource;
     private HierarchicalTreeDataGridSource<IMemoryNode> retainersSource;
 
+    private Subject<string?> searchTerm = new();
+
     public HeapView()
     {
         InitializeComponent();
+
+        searchTerm.Throttle(TimeSpan.FromMilliseconds(500))
+            .Select(v => v?.Trim())
+            .DistinctUntilChanged()
+            .Subscribe(st =>
+            {
+                Dispatcher.UIThread.Invoke(() =>
+                {
+                    if (string.IsNullOrWhiteSpace(st))
+                        ReloadSnapshot(heapSnapshot);
+                    else
+                        ReloadSnapshot(
+                            heapSnapshot,
+                            (n, u) =>
+                                n is not null
+                                && (n.Contains(st, StringComparison.InvariantCultureIgnoreCase) || u.ToString("x").Contains(st, StringComparison.InvariantCultureIgnoreCase)));
+                });
+            });
+
+
+        searchBox.TextChanging += (object? sender, TextChangingEventArgs e) => searchTerm.OnNext(searchBox.Text);
 
         heapNodes = new();
         retainersNodes = new();
@@ -35,6 +62,7 @@ public partial class HeapView : UserControl
                     x => x.Children),
                 new TextColumn<IMemoryNode, ulong>("Size", x => x.Size),
                 (retainedSizeColumn = new TextColumn<IMemoryNode, ulong>("Retained Size", x => x.RetainedSize)),
+                new TextColumn<IMemoryNode, int>("Count", x => x.Children.Count),
             },
         };
 
@@ -73,6 +101,40 @@ public partial class HeapView : UserControl
         }
     }
 
+    private void ReloadSnapshot(HeapSnapshot? heapSnapshot, Func<string, ulong, bool>? filterFunc = null)
+    {
+        heapNodes.Clear();
+        retainersNodes.Clear();
+
+        if (heapSnapshot is not null)
+        {
+            var nodeStorage = heapSnapshot.MemoryGraph.AllocNodeStorage();
+            var typeStorage = heapSnapshot.MemoryGraph.AllocTypeNodeStorage();
+            var typeNodes = new Dictionary<NodeTypeIndex, GroupedTypeMemoryNode>();
+            for (NodeIndex nodeIndex = 0; nodeIndex < heapSnapshot.MemoryGraph.NodeIndexLimit; nodeIndex++)
+            {
+                var node = heapSnapshot.MemoryGraph.GetNode(nodeIndex, nodeStorage);
+                var name = heapSnapshot.MemoryGraph.GetType(node.TypeIndex, typeStorage).Name;
+                var address = heapSnapshot.MemoryGraph.GetAddress(nodeIndex);
+
+                if (filterFunc is not null && !filterFunc(name, address))
+                    continue;
+
+                if (node.Size > 0)
+                {
+                    if (!typeNodes.TryGetValue(node.TypeIndex, out var groupedTypeMemoryNode))
+                        typeNodes.Add(node.TypeIndex, groupedTypeMemoryNode = new GroupedTypeMemoryNode { Name = name, Size = 0 });
+                    groupedTypeMemoryNode.Size += (ulong)node.Size;
+                    groupedTypeMemoryNode.RetainedSize += heapSnapshot.GetRetainedSize(nodeIndex);
+                    groupedTypeMemoryNode.MutableChildren.Add(new MemoryNode(heapSnapshot, node, groupedTypeMemoryNode.Name));
+                }
+            }
+
+            foreach (var topNode in typeNodes.Values)
+                heapNodes.Add(topNode);
+        }
+    }
+
     public HeapSnapshot? Snapshot
     {
         get => heapSnapshot;
@@ -81,31 +143,7 @@ public partial class HeapView : UserControl
             if (heapSnapshot != value)
             {
                 heapSnapshot = value;
-
-                heapNodes.Clear();
-                retainersNodes.Clear();
-
-                if (heapSnapshot is not null)
-                {
-                    var nodeStorage = heapSnapshot.MemoryGraph.AllocNodeStorage();
-                    var typeStorage = heapSnapshot.MemoryGraph.AllocTypeNodeStorage();
-                    var typeNodes = new Dictionary<NodeTypeIndex, GroupedTypeMemoryNode>();
-                    for (NodeIndex nodeIndex = 0; nodeIndex < heapSnapshot.MemoryGraph.NodeIndexLimit; nodeIndex++)
-                    {
-                        var node = heapSnapshot.MemoryGraph.GetNode(nodeIndex, nodeStorage);
-                        if (node.Size > 0)
-                        {
-                            if (!typeNodes.TryGetValue(node.TypeIndex, out var groupedTypeMemoryNode))
-                                typeNodes.Add(node.TypeIndex, groupedTypeMemoryNode = new GroupedTypeMemoryNode { Name = heapSnapshot.MemoryGraph.GetType(node.TypeIndex, typeStorage).Name, Size = 0 });
-                            groupedTypeMemoryNode.Size += (ulong)node.Size;
-                            groupedTypeMemoryNode.RetainedSize += heapSnapshot.GetRetainedSize(nodeIndex);
-                            groupedTypeMemoryNode.MutableChildren.Add(new MemoryNode(heapSnapshot, node, groupedTypeMemoryNode.Name));
-                        }
-                    }
-
-                    foreach (var topNode in typeNodes.Values)
-                        heapNodes.Add(topNode);
-                }
+                ReloadSnapshot(heapSnapshot);
             }
         }
     }
@@ -116,7 +154,7 @@ public partial class HeapView : UserControl
         ulong Size { get; }
         ulong RetainedSize { get; }
         int Depth { get; }
-        IReadOnlyList <IMemoryNode> Children { get; }
+        IReadOnlyList<IMemoryNode> Children { get; }
     }
 
     class MemoryNode : IMemoryNode
