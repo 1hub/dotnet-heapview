@@ -9,8 +9,8 @@
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.6.133" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.9" />
     <PackageReference Include="Microsoft.Diagnostics.Monitoring.EventPipe" Version="8.0.510501" />
-    <PackageReference Include="Avalonia" Version="11.0.6" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.5" />
+    <PackageReference Include="Avalonia" Version="11.1.999-cibuild0045984-beta" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.999-cibuild0045984-beta" />
     <PackageReference Include="Avalonia.Controls.TreeDataGrid" Version="11.0.2" />
     <PackageReference Include="ReactiveUI" Version="19.5.72" />
   </ItemGroup>
