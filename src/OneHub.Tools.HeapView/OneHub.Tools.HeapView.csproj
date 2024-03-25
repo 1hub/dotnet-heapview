@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <AssemblyName>dotnet-heapview</AssemblyName>
-    <AvaloniaVersion>11.1.999-cibuild0042879-beta</AvaloniaVersion>
+    <AvaloniaVersion>11.1.0-beta1</AvaloniaVersion>
   </PropertyGroup>
 	
   <PropertyGroup>
