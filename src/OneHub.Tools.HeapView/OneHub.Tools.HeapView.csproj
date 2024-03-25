@@ -7,7 +7,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <AssemblyName>dotnet-heapview</AssemblyName>
-    <AvaloniaVersion>11.1.999-cibuild0042879-beta</AvaloniaVersion>
+    <AvaloniaVersion>11.1.0-beta1</AvaloniaVersion>
   </PropertyGroup>
 	
   <PropertyGroup>
