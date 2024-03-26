@@ -4,6 +4,7 @@ using Avalonia.Platform.Storage;
 using OneHub.Diagnostics.HeapView;
 using System.Linq;
 using System;
+using System.IO;
 
 namespace OneHub.Tools.HeapView;
 
@@ -21,8 +22,22 @@ public partial class MainWindow : Window
     {
         try
         {
-            var heapDump = new GCHeapDump(fileName);
-            var heapSnapshot = new HeapSnapshot(heapDump);
+            HeapSnapshot heapSnapshot;
+            switch (Path.GetExtension(fileName))
+            {
+                case ".hprof":
+                    using (var inputStream = File.OpenRead(fileName))
+                    {
+                        heapSnapshot = new HeapSnapshot(HProfConverter.Convert(inputStream));
+                    }
+                    break;
+
+                default:
+                case ".gcdump":
+                    var heapDump = new GCHeapDump(fileName);
+                    heapSnapshot = new HeapSnapshot(heapDump);
+                    break;
+            }
             heapView.Snapshot = heapSnapshot;
         }
         catch (Exception ex)
@@ -57,7 +72,7 @@ public partial class MainWindow : Window
         var options = new FilePickerOpenOptions
         {
             AllowMultiple = false,
-            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump" } } }
+            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump", "*.hprof" } } }
         };
         var result = await StorageProvider.OpenFilePickerAsync(options);
         if (result != null && result.Count == 1 && result[0].TryGetLocalPath() is string path)
