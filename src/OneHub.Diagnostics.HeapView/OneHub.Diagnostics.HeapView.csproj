@@ -12,6 +12,6 @@
     <PackageReference Include="Avalonia" Version="11.1.0-beta1" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.0-beta1" />
     <PackageReference Include="Avalonia.Controls.TreeDataGrid" Version="11.0.2" />
-    <PackageReference Include="ReactiveUI" Version="20.0.1" />
+    <PackageReference Include="ReactiveUI" Version="20.1.1" />
   </ItemGroup>
 </Project>
