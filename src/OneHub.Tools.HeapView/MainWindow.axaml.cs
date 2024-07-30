@@ -32,6 +32,13 @@ public partial class MainWindow : Window
                     }
                     break;
 
+                case ".mono-heap":
+                    using (var inputStream = File.OpenRead(fileName))
+                    {
+                        heapSnapshot = new HeapSnapshot(MonoHeapSnapshotConverter.Convert(inputStream));
+                    }
+                    break;
+
                 default:
                 case ".gcdump":
                     var heapDump = new GCHeapDump(fileName);
@@ -72,7 +79,7 @@ public partial class MainWindow : Window
         var options = new FilePickerOpenOptions
         {
             AllowMultiple = false,
-            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump", "*.hprof" } } }
+            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump", "*.hprof", "*.mono-heap" } } }
         };
         var result = await StorageProvider.OpenFilePickerAsync(options);
         if (result != null && result.Count == 1 && result[0].TryGetLocalPath() is string path)
