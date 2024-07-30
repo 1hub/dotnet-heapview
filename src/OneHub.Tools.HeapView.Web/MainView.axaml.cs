@@ -61,7 +61,7 @@ public partial class MainView : UserControl
         var options = new FilePickerOpenOptions
         {
             AllowMultiple = false,
-            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump" } } }
+            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump", "*.hprof", "*.mono-heap" } } }
         };
         var result = await StorageProvider.OpenFilePickerAsync(options);
         if (result != null && result.Count == 1 && result[0] is IStorageFile storageFile)
