@@ -294,9 +294,6 @@ namespace OneHub.Diagnostics.HeapView
             memoryGraph.RootIndex = rootBuilder.Index;
             memoryGraph.AllowReading();
 
-            using (var w = new StreamWriter("d:\\temp\\graph.txt"))
-                memoryGraph.WriteXml(w);
-
             return memoryGraph;
 
 
