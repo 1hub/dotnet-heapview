@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using MsBox.Avalonia;
 using System;
 using System.Linq;
 
@@ -33,6 +34,9 @@ public partial class MainView : UserControl
         catch (Exception ex)
         {
             Console.WriteLine(ex);
+
+            var m = MessageBoxManager.GetMessageBoxStandard("Load error", ex.Message);
+            await m.ShowAsync();
         }
     }
 
