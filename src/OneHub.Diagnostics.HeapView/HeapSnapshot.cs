@@ -11,6 +11,7 @@ public class HeapSnapshot
 {
     private MemoryGraph graph;
     private RefGraph refGraph;
+    private Dictionary<string, double>? counters;
 
     private int[] postOrderIndex2NodeIndex;
     private int[] nodeIndex2Depth;
@@ -20,6 +21,7 @@ public class HeapSnapshot
 
     public MemoryGraph MemoryGraph => graph;
     public RefGraph RefGraph => refGraph;
+    public Dictionary<string, double>? Counters => counters;
     public ulong GetRetainedSize(NodeIndex nodeIndex) => retainedSizes[(int)nodeIndex];
     public int GetDepth(NodeIndex nodeIndex) => nodeIndex2Depth[(int)nodeIndex];
 
@@ -28,10 +30,11 @@ public class HeapSnapshot
     {
     }
 
-    public HeapSnapshot(MemoryGraph memoryGraph)
+    public HeapSnapshot(MemoryGraph memoryGraph, Dictionary<string, double>? counters = null)
     {
         this.graph = memoryGraph;
         this.refGraph = new RefGraph(memoryGraph);
+        this.counters = counters;
         BuildPostOrderIndex();
         BuildDepthIndex();
         CalculateRetainedSizes();

@@ -13,7 +13,7 @@ namespace OneHub.Diagnostics.HeapView
 {
     public class MonoHeapSnapshotConverter
     {
-        public static MemoryGraph Convert(Stream inputStream)
+        public static HeapSnapshot Convert(Stream inputStream)
         {
             MemoryGraph memoryGraph = new MemoryGraph(10000);
             var rootBuilder = new MemoryNodeBuilder(memoryGraph, "[MonoVM Roots]");
@@ -108,6 +108,14 @@ namespace OneHub.Diagnostics.HeapView
                         }
                     }
                 }
+                else if (chunk.ChunkId.SequenceEqual("CNTR"u8))
+                {
+                    var additionalCounters = LoadCounters(counterChunk);
+                    foreach (var (k, v) in additionalCounters)
+                    {
+                        counters[k] = v;
+                    }
+                }
             }
 
             Array.Sort(classes, 0, classOffset, SnapshotClass.AddressComparer.Instance);
@@ -151,7 +159,7 @@ namespace OneHub.Diagnostics.HeapView
             memoryGraph.RootIndex = rootBuilder.Index;
             memoryGraph.AllowReading();
 
-            return memoryGraph;
+            return new HeapSnapshot(memoryGraph, counters);
         }
 
         static Dictionary<string, double> LoadCounters(RiffChunk chunk)

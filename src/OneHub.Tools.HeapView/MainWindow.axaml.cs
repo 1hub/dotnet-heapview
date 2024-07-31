@@ -28,14 +28,14 @@ public partial class MainWindow : Window
                 case ".hprof":
                     using (var inputStream = File.OpenRead(fileName))
                     {
-                        heapSnapshot = new HeapSnapshot(HProfConverter.Convert(inputStream));
+                        heapSnapshot = HProfConverter.Convert(inputStream);
                     }
                     break;
 
                 case ".mono-heap":
                     using (var inputStream = File.OpenRead(fileName))
                     {
-                        heapSnapshot = new HeapSnapshot(MonoHeapSnapshotConverter.Convert(inputStream));
+                        heapSnapshot = MonoHeapSnapshotConverter.Convert(inputStream);
                     }
                     break;
 

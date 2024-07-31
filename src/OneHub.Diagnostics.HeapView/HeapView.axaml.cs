@@ -17,9 +17,11 @@ public partial class HeapView : UserControl
 
     private ObservableCollection<IMemoryNode> heapNodes;
     private ObservableCollection<IMemoryNode> retainersNodes;
+    private ObservableCollection<Tuple<string, double>> countersNodes;
 
     private HierarchicalTreeDataGridSource<IMemoryNode> heapSource;
     private HierarchicalTreeDataGridSource<IMemoryNode> retainersSource;
+    private FlatTreeDataGridSource<Tuple<string, double>> countersSource;
 
     private Subject<string?> searchTerm = new();
 
@@ -50,6 +52,7 @@ public partial class HeapView : UserControl
 
         heapNodes = new();
         retainersNodes = new();
+        countersNodes = new();
 
         TextColumn<IMemoryNode, ulong> retainedSizeColumn;
 
@@ -83,10 +86,20 @@ public partial class HeapView : UserControl
 
         retainersSource.SortBy(distanceToRootColumn, System.ComponentModel.ListSortDirection.Ascending);
 
+        countersSource = new FlatTreeDataGridSource<Tuple<string, double>>(countersNodes)
+        {
+            Columns =
+            {
+                new TextColumn<Tuple<string, double>, string>("Name", x => x.Item1),
+                new TextColumn<Tuple<string, double>, double>("Value", x => x.Item2),
+            }
+        };
+
         heapSource.RowSelection!.SelectionChanged += RowSelection_SelectionChanged;
 
         heapTree.Source = heapSource;
         retainersTree.Source = retainersSource;
+        countersGrid.Source = countersSource;
     }
 
     private void RowSelection_SelectionChanged(object? sender, Avalonia.Controls.Selection.TreeSelectionModelSelectionChangedEventArgs<IMemoryNode> e)
@@ -105,6 +118,7 @@ public partial class HeapView : UserControl
     {
         heapNodes.Clear();
         retainersNodes.Clear();
+        countersNodes.Clear();
 
         if (heapSnapshot is not null)
         {
@@ -132,6 +146,18 @@ public partial class HeapView : UserControl
 
             foreach (var topNode in typeNodes.Values)
                 heapNodes.Add(topNode);
+
+            if (heapSnapshot.Counters is not null)
+            {
+                foreach (var counter in heapSnapshot.Counters)
+                    countersNodes.Add(new Tuple<string, double>(counter.Key, counter.Value));
+            }
+            countersTab.IsVisible = heapSnapshot.Counters is not null;
+
+            // Hide tabs if there's only one
+            managedHeapTab.IsVisible = countersTab.IsVisible;
+            // Always select the first one
+            tabs.SelectedIndex = 0;
         }
     }
 

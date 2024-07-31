@@ -26,23 +26,23 @@ namespace OneHub.Tools.HeapView
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Loading)));
 
                 var file = await storageFile.OpenReadAsync();
-                var memoryStream = new MemoryStream((int)file.Length);
-                await file.CopyToAsync(memoryStream);
-                memoryStream.Position = 0;
 
                 HeapSnapshot heapSnapshot;
                 switch (Path.GetExtension(storageFile.Name))
                 {
                     case ".hprof":
-                        heapSnapshot = new HeapSnapshot(HProfConverter.Convert(memoryStream));
+                        heapSnapshot = HProfConverter.Convert(file);
                         break;
 
                     case ".mono-heap":
-                        heapSnapshot = new HeapSnapshot(MonoHeapSnapshotConverter.Convert(memoryStream));
+                        heapSnapshot = MonoHeapSnapshotConverter.Convert(file);
                         break;
 
                     default:
                     case ".gcdump":
+                        var memoryStream = new MemoryStream((int)file.Length);
+                        await file.CopyToAsync(memoryStream);
+                        memoryStream.Position = 0;
                         var heapDump = new GCHeapDump(memoryStream, storageFile.Name);
                         heapSnapshot = new HeapSnapshot(heapDump);
                         break;
