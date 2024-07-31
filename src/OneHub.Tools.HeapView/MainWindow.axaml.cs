@@ -5,6 +5,7 @@ using OneHub.Diagnostics.HeapView;
 using System.Linq;
 using System;
 using System.IO;
+using MsBox.Avalonia;
 
 namespace OneHub.Tools.HeapView;
 
@@ -18,7 +19,7 @@ public partial class MainWindow : Window
         AddHandler(DragDrop.DropEvent, Drop);
     }
     
-    public void Open(string fileName)
+    public async void Open(string fileName)
     {
         try
         {
@@ -49,8 +50,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            // TODO: Show error
             Console.WriteLine(ex);
+
+            var m = MessageBoxManager.GetMessageBoxStandard("Load error", ex.Message);
+            await m.ShowAsync();
         }
     }
 
