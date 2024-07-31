@@ -14,7 +14,7 @@ namespace OneHub.Diagnostics.HeapView
 {
     public class HProfConverter
     {
-        public static MemoryGraph Convert(Stream inputStream)
+        public static HeapSnapshot Convert(Stream inputStream)
         {
             MemoryGraph memoryGraph = new MemoryGraph(10000);
             var rootBuilder = new MemoryNodeBuilder(memoryGraph, "[Java Roots]");
@@ -294,8 +294,7 @@ namespace OneHub.Diagnostics.HeapView
             memoryGraph.RootIndex = rootBuilder.Index;
             memoryGraph.AllowReading();
 
-            return memoryGraph;
-
+            return new HeapSnapshot(memoryGraph);
 
             byte ReadByte()
             {
