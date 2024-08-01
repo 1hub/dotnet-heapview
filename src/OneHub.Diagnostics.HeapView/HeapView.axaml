@@ -4,12 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="OneHub.Diagnostics.HeapView.HeapView">
-	<TabControl Margin="5" Name="tabs">
+	<TabControl Margin="0" Padding="0" Name="tabs">
 		<TabItem Header="Managed Heap" Name="managedHeapTab" IsVisible="false">
 		  	<Grid RowDefinitions="*, Auto, *">
 				<Grid Grid.Row="0" RowDefinitions="Auto, *" ColumnDefinitions="Auto, *">
 					<TextBlock Grid.Row="0" Text="Search:" Margin="4,8,8,8" Grid.Column="0" />
-					<TextBox Name="searchBox" Grid.Row="0" Grid.Column="1"  />
+					<TextBox Name="searchBox" Grid.Row="0" Grid.Column="1" Margin="0,0,4,0" />
 					<TreeDataGrid Name="heapTree" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" />
 				</Grid>
 		
