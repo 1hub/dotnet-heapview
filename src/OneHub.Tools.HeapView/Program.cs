@@ -9,10 +9,10 @@ class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        var fileNameArgument = new Argument<string?>("filename", () => null, "Path to .gcdump file");
+        var fileNameArgument = new Argument<string?>("filename") { Description = "Path to .gcdump file", Arity = ArgumentArity.ZeroOrOne };
         var cmd = new RootCommand { fileNameArgument };
-        cmd.SetHandler(HandleView, fileNameArgument);
-        return cmd.Invoke(args);
+        cmd.SetAction(parseResult => HandleView(parseResult.GetValue(fileNameArgument)));
+        return cmd.Parse(args).Invoke();
     }
 
     static void HandleView(string? inputFileName)
