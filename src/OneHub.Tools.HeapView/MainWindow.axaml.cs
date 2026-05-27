@@ -59,7 +59,7 @@ public partial class MainWindow : Window
 
     private void DragOver(object? sender, DragEventArgs e)
     {
-        if (!e.Data.Contains(DataFormats.Files) || e.Data.GetFiles()?.FirstOrDefault() is not IStorageFile)
+        if (GetFirstDroppedFile(e.DataTransfer) is null)
             e.DragEffects = DragDropEffects.None;
         else
             e.DragEffects = DragDropEffects.Move;
@@ -67,14 +67,18 @@ public partial class MainWindow : Window
 
     private void Drop(object? sender, DragEventArgs e)
     {
-        if (e.Data.Contains(DataFormats.Files))
+        if (GetFirstDroppedFile(e.DataTransfer)?.TryGetLocalPath() is string path)
         {
-            var files = e.Data.GetFiles()?.OfType<IStorageFile>().ToArray();
-            if (files?.FirstOrDefault()?.TryGetLocalPath() is string path)
-            {
-                Open(path);
-            }
+            Open(path);
         }
+    }
+
+    private static IStorageFile? GetFirstDroppedFile(IDataTransfer? dataTransfer)
+    {
+        return dataTransfer?.Items
+            .Select(item => item.TryGetRaw(DataFormat.File))
+            .OfType<IStorageFile>()
+            .FirstOrDefault();
     }
 
     public async void OnOpenClicked(object? sender, EventArgs args)
