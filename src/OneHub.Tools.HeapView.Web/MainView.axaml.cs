@@ -42,7 +42,7 @@ public partial class MainView : UserControl
 
     private void DragOver(object? sender, DragEventArgs e)
     {
-        if (!e.Data.Contains(DataFormats.Files) || e.Data.GetFiles()?.FirstOrDefault() is not IStorageFile)
+        if (GetFirstDroppedFile(e.DataTransfer) is null)
             e.DragEffects = DragDropEffects.None;
         else
             e.DragEffects = DragDropEffects.Move;
@@ -50,14 +50,18 @@ public partial class MainView : UserControl
 
     private void Drop(object? sender, DragEventArgs e)
     {
-        if (e.Data.Contains(DataFormats.Files))
+        if (GetFirstDroppedFile(e.DataTransfer) is IStorageFile storageFile)
         {
-            var files = e.Data.GetFiles()?.OfType<IStorageFile>().ToArray();
-            if (files?.FirstOrDefault() is IStorageFile storageFile)
-            {
-                Open(storageFile);
-            }
+            Open(storageFile);
         }
+    }
+
+    private static IStorageFile? GetFirstDroppedFile(IDataTransfer? dataTransfer)
+    {
+        return dataTransfer?.Items
+            .Select(item => item.TryGetRaw(DataFormat.File))
+            .OfType<IStorageFile>()
+            .FirstOrDefault();
     }
 
     public async void OnOpenClicked(object? sender, RoutedEventArgs args)

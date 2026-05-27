@@ -7,11 +7,11 @@
 
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.30" />
-    <PackageReference Include="Microsoft.Diagnostics.Monitoring.EventPipe" Version="10.0.707702" />
-    <PackageReference Include="Avalonia" Version="11.3.12" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
-    <PackageReference Include="TreeDataGrid" Version="11.3.12" />
-    <PackageReference Include="ReactiveUI" Version="23.1.8" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.2.3" />
+    <PackageReference Include="Microsoft.Diagnostics.Monitoring.EventPipe" Version="10.0.721401" />
+    <PackageReference Include="Avalonia" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
+    <PackageReference Include="TreeDataGrid" Version="12.0.0" />
+    <PackageReference Include="ReactiveUI" Version="23.2.27" />
   </ItemGroup>
 </Project>
