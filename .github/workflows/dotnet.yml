@@ -19,10 +19,14 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: 10.0.x
-    - name: Build
+    - name: Build desktop tool
       run: dotnet build -c Release src/OneHub.Tools.HeapView/OneHub.Tools.HeapView.csproj
-    - name: Pack      
+    - name: Build MCP tool
+      run: dotnet build -c Release src/OneHub.Tools.HeapView.Mcp/OneHub.Tools.HeapView.Mcp.csproj
+    - name: Pack desktop tool
       run: dotnet pack -c Release src/OneHub.Tools.HeapView/OneHub.Tools.HeapView.csproj
+    - name: Pack MCP tool
+      run: dotnet pack -c Release src/OneHub.Tools.HeapView.Mcp/OneHub.Tools.HeapView.Mcp.csproj
     - name: Publish the package to nuget.org
       if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
       run: dotnet nuget push nupkg/*.nupkg -k $NUGET_API_KEY -s https://api.nuget.org/v3/index.json
