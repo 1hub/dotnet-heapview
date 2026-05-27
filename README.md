@@ -1,41 +1,36 @@
-# Simple viewer for .NET .gcdump files
+# dotnet-heapview
 
-![Screenshot of the dotnet-heapview user interface](documentation/screenshot.png)
+dotnet-heapview is a set of tools for inspecting managed heap dumps.
 
-## Installation
+## Tools
 
-`dotnet tool install -g dotnet-heapview`
+- [dotnet-heapview](src/OneHub.Tools.HeapView/README.md) is the desktop heap dump viewer.
+- [dotnet-heapview-mcp](src/OneHub.Tools.HeapView.Mcp/README.md) is a Model Context Protocol server for heap analysis from AI coding agents and MCP clients.
 
-For the MCP server:
+The shared heap model and dump converters live in `src/OneHub.Diagnostics.HeapView`.
 
-`dotnet tool install -g dotnet-heapview-mcp`
+## Supported Dump Formats
 
-## Usage
+- `.gcdump`
+- `.hprof`
+- `.mono-heap`
 
-`dotnet-heapview <path to .gcdump file>`
+## Development
 
-## MCP server
+Build the solution with:
 
-`dotnet-heapview-mcp` starts a stdio Model Context Protocol server for heap analysis.
-
-After installation, configure your MCP client to run:
-
-`dotnet-heapview-mcp`
-
-During development, run it with:
-
-`dotnet run --project src/OneHub.Tools.HeapView.Mcp`
-
-Example MCP client configuration:
-
-```json
-{
-  "mcpServers": {
-    "heapview": {
-      "command": "dotnet-heapview-mcp"
-    }
-  }
-}
+```powershell
+dotnet build src/src.sln
 ```
 
-The server exposes heap tools backed by dotnet-heapview's graph model: `load_heap`, `get_summary`, class queries, instance queries, outgoing references, incoming references, paths to roots, GC roots, preserved counters, and top-object analysis. It supports `.gcdump`, `.hprof`, and `.mono-heap` through the existing dotnet-heapview converters.
+Run the desktop viewer from source with:
+
+```powershell
+dotnet run --project src/OneHub.Tools.HeapView -- <path-to-dump>
+```
+
+Run the MCP server from source with:
+
+```powershell
+dotnet run --project src/OneHub.Tools.HeapView.Mcp
+```
