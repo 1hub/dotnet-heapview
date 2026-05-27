@@ -24,7 +24,7 @@ public partial class MainWindow : Window
         try
         {
             HeapSnapshot heapSnapshot;
-            switch (Path.GetExtension(fileName))
+            switch (Path.GetExtension(fileName).ToLowerInvariant())
             {
                 case ".hprof":
                     using (var inputStream = File.OpenRead(fileName))
@@ -39,6 +39,14 @@ public partial class MainWindow : Window
                         heapSnapshot = MonoHeapSnapshotConverter.Convert(inputStream);
                     }
                     break;
+
+                case ".dmp":
+#if NET11_0_OR_GREATER
+                    heapSnapshot = WindowsDumpCdacConverter.Convert(fileName);
+                    break;
+#else
+                    throw new NotSupportedException("Windows dump import requires the net11.0 desktop build.");
+#endif
 
                 default:
                 case ".gcdump":
@@ -86,7 +94,7 @@ public partial class MainWindow : Window
         var options = new FilePickerOpenOptions
         {
             AllowMultiple = false,
-            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump", "*.hprof", "*.mono-heap" } } }
+            FileTypeFilter = new[] { new FilePickerFileType("GC dump") { Patterns = new[] { "*.gcdump", "*.hprof", "*.mono-heap", "*.dmp", "*.DMP" } } }
         };
         var result = await StorageProvider.OpenFilePickerAsync(options);
         if (result != null && result.Count == 1 && result[0].TryGetLocalPath() is string path)

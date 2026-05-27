@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <NoWarn>$(NoWarn);NETCDAC0001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,5 +14,11 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.3" />
     <PackageReference Include="TreeDataGrid" Version="12.0.0" />
     <PackageReference Include="ReactiveUI" Version="23.2.27" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <PackageReference Include="Microsoft.Diagnostics.DataContractReader" Version="11.0.0-preview.4.26257.104" />
+    <PackageReference Include="Microsoft.Diagnostics.DataContractReader.Contracts" Version="11.0.0-preview.4.26257.104" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="4.0.726401" />
   </ItemGroup>
 </Project>
