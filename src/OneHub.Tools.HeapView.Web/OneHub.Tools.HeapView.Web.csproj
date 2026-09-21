@@ -9,8 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Browser" Version="12.0.3" />
+    <PackageReference Include="Avalonia.Browser" Version="12.1.2" />
     <PackageReference Include="MessageBox.Avalonia" Version="12.0.0" />
+    <!-- Override the unlisted nightly dependency from MessageBox.Avalonia. -->
+    <PackageReference Include="DialogHost.Avalonia" Version="0.12.3" />
   </ItemGroup>
 
   <ItemGroup>
