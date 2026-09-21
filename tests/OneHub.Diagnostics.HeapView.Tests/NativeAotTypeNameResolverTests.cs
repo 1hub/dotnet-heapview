@@ -1,4 +1,5 @@
-using System.Text;
+using LibObjectFile.IO;
+using LibObjectFile.MachO;
 using Graphs;
 using OneHub.Diagnostics.HeapView;
 using Xunit;
@@ -77,6 +78,18 @@ public sealed class NativeAotTypeNameResolverTests : IDisposable
         Assert.Equal("TypeID(0x3000)", Name(graph, method));
     }
 
+    [Theory]
+    [InlineData("__ZTV7Type_Č", "Type_Č", 1)]
+    [InlineData("__ZTV6Type_Č", "TypeID(0x1234)", 0)]
+    public void TypeNameLengthCountsUtf8Bytes(string symbol, string expectedName, int resolved)
+    {
+        string image = WriteImage("app", uuid, (0x1234, symbol));
+        var graph = new MemoryGraph(1);
+        var type = graph.CreateType(0x1234, new Module(0) { Path = image });
+        Assert.Equal(resolved, NativeAotTypeNameResolver.Resolve(graph));
+        Assert.Equal(expectedName, Name(graph, type));
+    }
+
     [Fact]
     public void MissingModulesKeepTypeIdsWithSuffixes()
     {
@@ -138,8 +151,15 @@ public sealed class NativeAotTypeNameResolverTests : IDisposable
     public void RejectsTruncatedSymbolTable()
     {
         string image = WriteImage("app", uuid, (0x1234, "__ZTV6String"));
+        long truncatedLength;
+        using (var input = File.OpenRead(image))
+        {
+            var machO = MachOFile.Read(input);
+            var symbols = machO.LoadCommands.OfType<MachOSymbolTableCommand>().Single();
+            truncatedLength = symbols.SymbolOffset + MachOSymbolTableCommand.GetSymbolSize(machO.Is64Bit) - 1;
+        }
         using (var file = File.OpenWrite(image))
-            file.SetLength(155);
+            file.SetLength(truncatedLength);
         var graph = new MemoryGraph(1);
         graph.CreateType(0x1234, new Module(0));
         Assert.Throws<InvalidDataException>(() => NativeAotTypeNameResolver.Resolve(graph, image));
@@ -159,47 +179,97 @@ public sealed class NativeAotTypeNameResolverTests : IDisposable
 
     private static string Name(MemoryGraph graph, NodeTypeIndex type) => graph.GetType(type, graph.AllocTypeNodeStorage()).Name;
 
-    // Minimal linked Mach-O fixture, with real header/load-command/nlist layouts.
     private string WriteImage(string name, byte[] identity, params (uint Rva, string Name)[] symbols)
     {
         string path = Path.Combine(directory, name);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        using var stream = File.Create(path);
-        using var writer = new BinaryWriter(stream);
-        const uint symbolOffset = 32 + 72 + 24 + 24;
-        byte[] strings = Encoding.UTF8.GetBytes("\0" + string.Join('\0', symbols.Select(s => s.Name)) + "\0");
-        writer.Write(0xfeedfacfU);
-        writer.Write(0x100000cU); // arm64
-        writer.Write(0U);
-        writer.Write(2U); // MH_EXECUTE
-        writer.Write(3U);
-        writer.Write(120U);
-        writer.Write(0UL);
-        writer.Write(0x19U);
-        writer.Write(72U);
-        writer.Write(Encoding.ASCII.GetBytes("__TEXT".PadRight(16, '\0')));
-        writer.Write(0x100000000UL);
-        writer.Write(new byte[40]);
-        writer.Write(0x1bU);
-        writer.Write(24U);
-        writer.Write(identity);
-        writer.Write(2U);
-        writer.Write(24U);
-        writer.Write(symbolOffset);
-        writer.Write((uint)symbols.Length);
-        writer.Write(symbolOffset + (uint)symbols.Length * 16);
-        writer.Write((uint)strings.Length);
-        uint offset = 1;
+        var image = new MachOFile
+        {
+            Is64Bit = true,
+            CpuType = MachOCpuType.Arm64,
+            FileType = name.Contains(".dSYM", StringComparison.Ordinal) ? MachOFileType.Dsym : MachOFileType.Execute
+        };
+        var text = new MachOSegment
+        {
+            Type = MachOLoadCommandType.Segment64,
+            Is64Bit = true,
+            Name = "__TEXT",
+            VmAddress = 0x100000000,
+            VmSize = 0x100000000
+        };
+        // Reserve address space for the synthetic type tables, including high RVAs,
+        // without allocating their contents in the test file.
+        text.Sections.Add(new MachOSection
+        {
+            Name = "__types", SegmentName = text.Name, Address = text.VmAddress,
+            Size = text.VmSize, SectionType = MachOSectionType.ZeroFill
+        });
+        text.Size = MachOSegment.ComputeCommandSize(image.Is64Bit, text.Sections.Count);
+        var symtab = new MachOSymbolTableCommand
+        {
+            Type = MachOLoadCommandType.SymbolTable,
+            Size = MachOSymbolTableCommand.CommandSize,
+            SymbolCount = (uint)symbols.Length
+        };
+        image.LoadCommands.Add(text);
+        image.LoadCommands.Add(new MachOUuidCommand
+        {
+            Type = MachOLoadCommandType.Uuid, Size = MachOUuidCommand.CommandSize,
+            Uuid = new Guid(identity, bigEndian: true)
+        });
+        image.LoadCommands.Add(symtab);
+        image.Content.Add(new MachOHeaderContent { Size = image.HeaderSize });
+        image.Content.Add(new MachOLoadCommandTable { Position = image.HeaderSize, Size = image.SizeOfCommands });
+
+        using var strings = new MemoryStream();
+        strings.WriteByte(0);
+        var entries = new List<MachOSymbol>();
         foreach (var symbol in symbols)
         {
-            writer.Write(offset);
-            writer.Write((byte)0x0e); // N_SECT
-            writer.Write((byte)1);
-            writer.Write((ushort)0);
-            writer.Write(0x100000000UL + symbol.Rva);
-            offset += (uint)Encoding.UTF8.GetByteCount(symbol.Name) + 1;
+            entries.Add(new MachOSymbol
+            {
+                Name = symbol.Name, NameOffset = (uint)strings.Position,
+                RawType = (byte)MachOSymbolKind.Section, SectionIndex = 1,
+                Value = text.VmAddress + symbol.Rva
+            });
+            strings.WriteStringUTF8NullTerminated(symbol.Name);
         }
-        writer.Write(strings);
+        var table = new SymbolTableContent(entries) { Position = image.LoadCommandsEndOffset };
+        symtab.SymbolOffset = (uint)table.Position;
+        symtab.StringOffset = (uint)(table.Position + table.Size);
+        symtab.StringSize = (uint)strings.Length;
+        image.Content.Add(table);
+        image.Content.Add(new MachOStreamContent(strings) { Position = symtab.StringOffset });
+        text.FileSize = image.ComputeFileSize();
+
+        using var output = File.Create(path);
+        image.Write(output);
         return path;
+    }
+
+    // LibObjectFile 2.3.1 models symbol entries for reading, but accepts writable
+    // symbol tables as raw MachOContent. Keep only this nlist_64 encoder here;
+    // the library generates and validates the Mach-O header and load commands.
+    private sealed class SymbolTableContent : MachOContent
+    {
+        private readonly IReadOnlyList<MachOSymbol> symbols;
+
+        public SymbolTableContent(IReadOnlyList<MachOSymbol> symbols)
+        {
+            this.symbols = symbols;
+            Size = (ulong)symbols.Count * MachOSymbolTableCommand.GetSymbolSize(is64Bit: true);
+        }
+
+        public override void WriteContent(MachOWriter writer)
+        {
+            foreach (var symbol in symbols)
+            {
+                writer.WriteU32(symbol.NameOffset);
+                writer.WriteU8(symbol.RawType);
+                writer.WriteU8(symbol.SectionIndex);
+                writer.WriteU16(symbol.Description);
+                writer.WriteU64(symbol.Value);
+            }
+        }
     }
 }

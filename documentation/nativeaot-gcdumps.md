@@ -30,9 +30,12 @@ snapshot. `NativeAotTypeNameResolver` installs the callback temporarily, forces
 name materialization, and restores the previous callback. Each module's symbol
 table is read once and released after name resolution.
 
-`MachOTypeSymbols` reads the linked image or dSYM's Mach-O load commands and native
-symbol table directly. Subtracting the preferred `__TEXT` address from a symbol's
-address gives the RVA stored in the dump; the process's ASLR slide is irrelevant.
+`MachOTypeSymbols` uses [LibObjectFile 2.3.1](https://www.nuget.org/packages/LibObjectFile/2.3.1)
+to read the linked image or dSYM's load commands and native symbol table.
+`UseSubStream` keeps section contents, including DWARF, out of memory; the symbol
+table is decoded while the input stream is open. Subtracting the preferred
+`__TEXT` address from a symbol's address gives the RVA stored in the dump; the
+process's ASLR slide is irrelevant.
 Only exact matches are accepted. NativeAOT's
 [UnixNodeMangler](https://github.com/dotnet/runtime/blob/main/src/coreclr/tools/aot/ILCompiler.Compiler/Compiler/UnixNodeMangler.cs)
 emits method tables as `_ZTV<length><compiler type name>`; Mach-O adds another
@@ -62,6 +65,12 @@ dylibs, and dSYMs with native symbol tables. Explicit symbols require a single
 native module. Windows PDB, Linux ELF, universal Mach-O, and browser symbol upload
 support remain future work.
 
+Test fixtures use LibObjectFile's `MachOFile`, load-command/content model, and
+writer. Version 2.3.1 exposes decoded symbols for reading but writable symbol
+tables as raw content, so tests provide a small `MachOContent` implementation for
+the `nlist_64` entries. Headers and load commands are generated and validated by
+the library. Malformed-file tests truncate the generated files deliberately.
+
 ## Verification
 
 On the supplied September 21, 2026 dump:
@@ -72,11 +81,12 @@ On the supplied September 21, 2026 dump:
 - The matching unstripped executable and a dSYM generated from it produce
   identical type-name sequences.
 - Complete snapshot construction, including retained-size calculations, takes
-  approximately one second on the development machine.
+  a few seconds on the development machine with LibObjectFile.
 
 Regression tests cover ASLR-independent RVAs, unsigned high RVAs, exact address
 matching, named types, fallback suffixes, path recovery, dSYM lookup, UUID
-mismatch, missing/unsupported images, malformed tables, and module isolation.
+mismatch, missing/unsupported images, malformed tables, UTF-8 symbol-name lengths,
+and module isolation.
 
 ```sh
 dotnet test tests/OneHub.Diagnostics.HeapView.Tests
