@@ -48,11 +48,27 @@ namespace punctuation. Replacing all underscores with dots would corrupt
 assembly names, nested types, and identifiers.
 
 The desktop `--symbols` option and MCP `symbol_file_path` argument accept an
-unstripped executable, dSYM bundle, or its DWARF file. Automatic lookup checks the
-recorded module image and adjacent dSYM bundles. UUID and CPU identity are checked
+unstripped executable, dSYM bundle, or its DWARF file. Automatic lookup checks
+adjacent dSYM bundles, then Spotlight on macOS, then the recorded module image's
+own symbols. UUID and CPU identity are checked
 against the local image when available. **The dump contains no macOS UUID**, so
 the local image must still be the exact build used to collect it. Missing modules
 are reported when an explicit symbol file cannot be verified.
+
+Spotlight lookup invokes `/usr/bin/mdfind -0` with a single
+`com_apple_xcode_dsym_uuids == UUID` query argument, following
+[Apple's documented UUID lookup](https://developer.apple.com/documentation/xcode/locating-a-missing-debug-symbol-file).
+The UUID comes from the executable's `LC_UUID` in native byte order. The invocation
+uses no shell, reads both output streams concurrently, preserves paths with spaces
+or newlines using null separators, and kills the search after a five-second timeout.
+Lookup results are reused for all deferred types in the module. The resolver checks
+each DWARF image in returned bundles and continues past stale, unreadable, empty,
+or mismatched candidates. An explicit `--symbols` path bypasses Spotlight.
+
+The recorded executable must be available to obtain the UUID. Spotlight must have
+indexed the dSYM; excluded directories (including typical temporary directories)
+may not appear. No match or a failed search falls back to the executable's symbols,
+then the normal `TypeID(...)` placeholders. No indexing settings are changed.
 
 If a recorded path contains trailing garbage including control characters, the
 resolver can recover an existing file prefix. It does not rewrite the dump.
@@ -86,7 +102,9 @@ On the supplied September 21, 2026 dump:
 Regression tests cover ASLR-independent RVAs, unsigned high RVAs, exact address
 matching, named types, fallback suffixes, path recovery, dSYM lookup, UUID
 mismatch, missing/unsupported images, malformed tables, UTF-8 symbol-name lengths,
-and module isolation.
+module isolation, Spotlight result validation, fallback and query precedence,
+null-delimited paths, command failures, and subprocess timeouts. Spotlight results
+are injected in fixture tests so they do not depend on the machine's index.
 
 ```sh
 dotnet test tests/OneHub.Diagnostics.HeapView.Tests

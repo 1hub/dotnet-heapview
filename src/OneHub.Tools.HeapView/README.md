@@ -30,7 +30,11 @@ dotnet-heapview dump.gcdump --symbols /path/to/MyApp.app.dSYM
 ```
 
 Without `--symbols`, the viewer checks the module path recorded in the dump,
-looking for an adjacent `.dSYM` or `.app.dSYM`, then symbols in the executable.
+looking for an adjacent `.dSYM` or `.app.dSYM`, then querying Spotlight on macOS
+for the executable's UUID with `mdfind`, and finally trying symbols in the executable.
+Each dSYM is checked against the executable's UUID and architecture before use.
+Spotlight lookup requires an indexed dSYM and times out after five seconds;
+missing, stale, or mismatched results do not prevent loading the dump.
 The option also applies to files subsequently opened in that viewer session.
 The symbol file must come from the exact build that produced the dump. When the
 recorded executable still exists, the viewer checks its UUID against the symbols;

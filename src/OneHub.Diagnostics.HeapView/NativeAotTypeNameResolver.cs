@@ -13,10 +13,15 @@ public static class NativeAotTypeNameResolver
     /// Resolve names before constructing a snapshot (which reads and caches type names).
     /// An explicit symbol file must belong to the dump's single native module. It can be
     /// an unstripped Mach-O image, a dSYM bundle, or its Contents/Resources/DWARF file.
-    /// Without an explicit file, look beside the recorded image for its dSYM, then in
-    /// the image itself. Missing automatic symbols leave TypeID placeholders intact.
+    /// Without an explicit file, look beside the recorded image for its dSYM, query
+    /// Spotlight on macOS, then try the image itself. Missing automatic symbols leave
+    /// TypeID placeholders intact.
     /// </summary>
     public static int Resolve(MemoryGraph graph, string? symbolFilePath = null, TextWriter? log = null)
+        => Resolve(graph, symbolFilePath, log, SpotlightDsymLocator.Find);
+
+    internal static int Resolve(MemoryGraph graph, string? symbolFilePath, TextWriter? log,
+        Func<Guid, TextWriter, IReadOnlyList<string>> findDsyms)
     {
         if (!graph.HasDeferedTypeNames)
             return 0;
@@ -50,10 +55,7 @@ public static class NativeAotTypeNameResolver
                     {
                         try
                         {
-                            string? dsym = FindDsym(imagePath);
-                            symbols = MachOTypeSymbols.Read(dsym ?? imagePath);
-                            if (dsym != null)
-                                ValidateIdentity(MachOTypeSymbols.Read(imagePath, readSymbols: false), symbols);
+                            symbols = ReadAutomaticSymbols(imagePath, log, findDsyms);
                         }
                         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
                         {
@@ -105,21 +107,82 @@ public static class NativeAotTypeNameResolver
         return files[0];
     }
 
-    private static string? FindDsym(string imagePath)
+    private static MachOTypeSymbols ReadAutomaticSymbols(string imagePath, TextWriter log,
+        Func<Guid, TextWriter, IReadOnlyList<string>> findDsyms)
+    {
+        var image = MachOTypeSymbols.Read(imagePath, readSymbols: false);
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+
+        MachOTypeSymbols? TryCandidate(string path)
+        {
+            if (!visited.Add(path))
+                return null;
+            try
+            {
+                // Validate metadata before decoding a potentially large symbol table.
+                ValidateIdentity(image, MachOTypeSymbols.Read(path, readSymbols: false));
+                var symbols = MachOTypeSymbols.Read(path);
+                if (symbols.Types.Count > 0)
+                {
+                    log.WriteLine($"Loaded native symbols from {path}.");
+                    return symbols;
+                }
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+            {
+                log.WriteLine($"Skipping dSYM candidate {path}: {ex.Message}");
+            }
+            return null;
+        }
+
+        foreach (string path in FindAdjacentDsyms(imagePath))
+        {
+            if (TryCandidate(path) is { } symbols)
+                return symbols;
+        }
+
+        // GC dumps do not retain a Mach-O UUID; get it from the recorded executable.
+        Guid uuid = image.Uuid == null ? Guid.Empty : new Guid(image.Uuid, bigEndian: true);
+        if (uuid != Guid.Empty)
+        {
+            foreach (string bundle in findDsyms(uuid, log))
+            {
+                try
+                {
+                    // A Spotlight result can be stale or contain multiple DWARF images.
+                    // Inspect all images; filenames alone do not establish identity.
+                    string dwarf = Path.Combine(bundle, "Contents", "Resources", "DWARF");
+                    if (!Directory.Exists(dwarf))
+                        continue;
+                    foreach (string path in Directory.GetFiles(dwarf))
+                    {
+                        if (TryCandidate(path) is { } symbols)
+                            return symbols;
+                    }
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    log.WriteLine($"Skipping Spotlight dSYM {bundle}: {ex.Message}");
+                }
+            }
+        }
+        return MachOTypeSymbols.Read(imagePath);
+    }
+
+    private static IEnumerable<string> FindAdjacentDsyms(string imagePath)
     {
         string name = Path.GetFileName(imagePath);
         string adjacent = Path.Combine(imagePath + ".dSYM", "Contents", "Resources", "DWARF", name);
         if (File.Exists(adjacent))
-            return adjacent;
+            yield return adjacent;
         // Apple app builds normally place Foo.app.dSYM beside Foo.app.
         var macos = new DirectoryInfo(Path.GetDirectoryName(imagePath)!);
         if (macos.Name == "MacOS" && macos.Parent?.Name == "Contents" && macos.Parent.Parent is { } app)
         {
             string appDsym = Path.Combine(app.FullName + ".dSYM", "Contents", "Resources", "DWARF", name);
             if (File.Exists(appDsym))
-                return appDsym;
+                yield return appDsym;
         }
-        return null;
     }
 
     private static string? FindImage(string? path, TextWriter log)
