@@ -26,8 +26,19 @@ public class HeapSnapshot
     public int GetDepth(NodeIndex nodeIndex) => nodeIndex2Depth[(int)nodeIndex];
 
     public HeapSnapshot(GCHeapDump heapDump)
-        : this(heapDump.MemoryGraph)
+        : this(heapDump, null)
     {
+    }
+
+    public HeapSnapshot(GCHeapDump heapDump, string? symbolFilePath, TextWriter? symbolLog = null)
+        : this(ResolveNativeTypes(heapDump.MemoryGraph, symbolFilePath, symbolLog))
+    {
+    }
+
+    private static MemoryGraph ResolveNativeTypes(MemoryGraph graph, string? symbolFilePath, TextWriter? log)
+    {
+        NativeAotTypeNameResolver.Resolve(graph, symbolFilePath, log);
+        return graph;
     }
 
     public HeapSnapshot(MemoryGraph memoryGraph, Dictionary<string, double>? counters = null)
@@ -138,4 +149,3 @@ public class HeapSnapshot
         }
     }
 }
-

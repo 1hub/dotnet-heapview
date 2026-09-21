@@ -9,6 +9,8 @@ namespace OneHub.Tools.HeapView;
 
 public partial class App : Application
 {
+    internal static string? SymbolFilePath { get; set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);

@@ -43,7 +43,7 @@ public partial class MainWindow : Window
                 default:
                 case ".gcdump":
                     var heapDump = new GCHeapDump(fileName);
-                    heapSnapshot = new HeapSnapshot(heapDump);
+                    heapSnapshot = new HeapSnapshot(heapDump, App.SymbolFilePath, Console.Error);
                     break;
             }
             heapView.Snapshot = heapSnapshot;

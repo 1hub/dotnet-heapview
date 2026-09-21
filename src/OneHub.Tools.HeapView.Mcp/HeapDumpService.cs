@@ -10,7 +10,7 @@ internal sealed class HeapDumpService
     private readonly object gate = new();
     private LoadedHeap? current;
 
-    public string LoadHeap(string filePath)
+    public string LoadHeap(string filePath, string? symbolFilePath = null)
     {
         if (string.IsNullOrWhiteSpace(filePath))
             throw new ArgumentException("A heap dump path is required.", nameof(filePath));
@@ -28,8 +28,8 @@ internal sealed class HeapDumpService
         {
             ".hprof" => HProfConverter.Convert(memoryStream),
             ".mono-heap" => MonoHeapSnapshotConverter.Convert(memoryStream),
-            ".gcdump" => new HeapSnapshot(new GCHeapDump(memoryStream, Path.GetFileName(fullPath))),
-            _ => new HeapSnapshot(new GCHeapDump(memoryStream, Path.GetFileName(fullPath))),
+            ".gcdump" => new HeapSnapshot(new GCHeapDump(memoryStream, Path.GetFileName(fullPath)), symbolFilePath, Console.Error),
+            _ => new HeapSnapshot(new GCHeapDump(memoryStream, Path.GetFileName(fullPath)), symbolFilePath, Console.Error),
         };
 
         lock (gate)
@@ -254,9 +254,9 @@ internal sealed class HeapDumpService
             .Slice(from, to);
     }
 
-    public string AnalyzeHeapDump(string filePath, int limit)
+    public string AnalyzeHeapDump(string filePath, int limit, string? symbolFilePath = null)
     {
-        LoadHeap(filePath);
+        LoadHeap(filePath, symbolFilePath);
         var stats = GetClassesByMaxInstancesCount(0, limit);
         var sb = new StringBuilder();
         sb.Append("Top ").Append(stats.Count).AppendLine(" Classes in Heap Dump:");

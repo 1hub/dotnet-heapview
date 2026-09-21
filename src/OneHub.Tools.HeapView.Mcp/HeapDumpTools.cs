@@ -11,9 +11,11 @@ internal sealed class HeapDumpTools(HeapDumpService heapDumpService)
     [Description("Loads a .gcdump, .hprof, or .mono-heap heap dump file and returns its summary.")]
     public string LoadHeap(
         [Description("Path to the heap dump file.")]
-        string file_path)
+        string file_path,
+        [Description("Optional matching macOS NativeAOT dSYM bundle or unstripped executable path.")]
+        string? symbol_file_path = null)
     {
-        return heapDumpService.LoadHeap(file_path);
+        return heapDumpService.LoadHeap(file_path, symbol_file_path);
     }
 
     [McpServerTool(Name = "get_classes_by_max_instances_count", Title = "Get Classes By Max Instances Count", ReadOnly = true)]
@@ -145,9 +147,11 @@ internal sealed class HeapDumpTools(HeapDumpService heapDumpService)
 
     [McpServerTool(Name = "analyze_heap_dump", Title = "Analyze Heap Dump", ReadOnly = false)]
     [Description("Parses a heap dump file and returns the top classes by instance count.")]
-    public string AnalyzeHeapDump(string file_path, int limit = 10)
+    public string AnalyzeHeapDump(string file_path, int limit = 10,
+        [Description("Optional matching macOS NativeAOT dSYM bundle or unstripped executable path.")]
+        string? symbol_file_path = null)
     {
-        return heapDumpService.AnalyzeHeapDump(file_path, limit);
+        return heapDumpService.AnalyzeHeapDump(file_path, limit, symbol_file_path);
     }
 
     private static string FormatClassStats(IReadOnlyList<ClassStats> stats)
