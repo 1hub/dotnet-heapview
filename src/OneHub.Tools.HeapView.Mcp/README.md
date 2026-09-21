@@ -57,7 +57,7 @@ Add the server to your MCP configuration:
 
 ## Tools
 
-- `load_heap`: loads a `.gcdump`, `.hprof`, or `.mono-heap` file and returns its summary.
+- `load_heap`: loads a `.gcdump`, `.hprof`, or `.mono-heap` file and returns its summary. For macOS NativeAOT dumps, the optional `symbol_file_path` accepts a matching dSYM bundle or unstripped executable.
 - `get_summary`: returns the summary of the loaded heap.
 - `get_classes_by_max_instances_count`: lists classes by instance count.
 - `get_classes_by_max_instances_size`: lists classes by total instance size.
@@ -73,9 +73,12 @@ Add the server to your MCP configuration:
 - `get_path_to_root`: returns one shortest retainer path from an instance to a GC root.
 - `get_gc_roots`: returns GC roots from the loaded heap.
 - `get_counters`: returns counters preserved by the loaded dump, when present.
-- `analyze_heap_dump`: loads a heap dump and returns top classes by instance count.
+- `analyze_heap_dump`: loads a heap dump and returns top classes by instance count. Accepts the same optional `symbol_file_path` as `load_heap`.
 
 ## Development
+
+NativeAOT symbol discovery and limitations are described in the
+[desktop viewer documentation](../OneHub.Tools.HeapView/README.md#macos-nativeaot-symbols).
 
 Run from source with:
 
